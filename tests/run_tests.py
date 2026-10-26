@@ -26,6 +26,9 @@ Main.lean). Its answers are checked two ways.
 
    - the oracle returns a value that is not a Unicode scalar value (a
      surrogate, or past U+10FFFF), where the tool fails;
+   - Node returns surrogates where the tool fails, and two of them
+     next to each other pair up into one code point in its UTF-16
+     string, as the model, run with surrogates let through, confirms;
    - the oracle overflows its integers (2**32 - 1 for the RFC code and
      libidn2, 2**31 - 1 for Node) where the model's largest number
      passes that bound and the tool, with unbounded integers, does not
@@ -34,7 +37,10 @@ Main.lean). Its answers are checked two ways.
      RFC 3492 does not (`-tda`);
    - libidn2 refuses a string with no deltas, such as `abc-` or the
      empty string, and basic code points other than letters, digits,
-     `-` and `_` before the delimiter, both of which RFC 3492 allows.
+     `-` and `_` before the delimiter, both of which RFC 3492 allows;
+   - libidn2 reads `_` after the delimiter as the digit `a`, where the
+     tool fails: `td_` gives what `tda` gives. The model, run on the
+     string with `_` there replaced by `a`, confirms it.
 
    Any other disagreement is a failure.
 
@@ -121,9 +127,11 @@ def scalar(n):
     return n <= 0x10FFFF and not 0xD800 <= n <= 0xDFFF
 
 
-def model_decode(s):
+def model_decode(s, surrogates=False):
     """Section 6.2. Returns (code points or None, why it failed, the
-    largest number the procedure needed)."""
+    largest number the procedure needed). With `surrogates`, it lets
+    surrogates through, as some oracles do, and fails only past
+    U+10FFFF."""
     n, i, bias = INITIAL_N, 0, INITIAL_BIAS
     b = s.rfind("-")
     if b > 0:
@@ -156,7 +164,7 @@ def model_decode(s):
         n += i // (len(out) + 1)
         peak = max(peak, n)
         i %= len(out) + 1
-        if not scalar(n):
+        if not (n <= 0x10FFFF if surrogates else scalar(n)):
             return None, "not a scalar value", peak
         out.insert(i, n)
         i += 1
@@ -344,10 +352,42 @@ BOUND = {"RFC 3492": 2 ** 32 - 1, "libidn2": 2 ** 32 - 1, "Node": 2 ** 31 - 1,
          "Python": None}
 
 
+def utf16_code_points(cps):
+    """The code points a UTF-16 string holds when the values `cps` are
+    written into it: a high surrogate followed by a low one reads back
+    as one code point."""
+    units = []
+    for c in cps:
+        if c > 0xFFFF:
+            units += [0xD800 + ((c - 0x10000) >> 10), 0xDC00 + ((c - 0x10000) & 0x3FF)]
+        else:
+            units.append(c)
+    out, j = [], 0
+    while j < len(units):
+        u = units[j]
+        if 0xD800 <= u <= 0xDBFF and j + 1 < len(units) and 0xDC00 <= units[j + 1] <= 0xDFFF:
+            out.append(0x10000 + ((u - 0xD800) << 10) + (units[j + 1] - 0xDC00))
+            j += 2
+        else:
+            out.append(u)
+            j += 1
+    return out
+
+
 def decode_reason(oracle, s, lean, got, model_peak, model_why):
     """The known reason the oracle's decoding differs, or None."""
     if lean is None and got is not None and not all(scalar(c) for c in got):
         return "the oracle returns a value that is not a scalar value"
+    if lean is None and got is not None and oracle == "Node" and model_why == "not a scalar value":
+        raw, _, _ = model_decode(s, surrogates=True)
+        if raw is not None and utf16_code_points(raw) == got:
+            return "Node returns surrogates, which pair up in its UTF-16 string"
+    if lean is None and got is not None and oracle == "libidn2":
+        b = s.rfind("-")
+        if "_" in s[b + 1:]:
+            want, _, _ = model_decode(s[:b + 1] + s[b + 1:].replace("_", "a"))
+            if want == got:
+                return "libidn2 reads _ in the deltas as the digit a"
     if (lean is None and got is not None and oracle == "Python"
             and s.rfind("-") == 0 and model_why is not None):
         return "Python reads a delimiter with nothing before it"
@@ -428,7 +468,11 @@ EDGE_DECODE = ["", "-", "--", "---", "-tda", "tda", "TDA", "TdA", "a", "abc-", "
                "ib9b", "zy0c", "0y0c", "dn32g", "en32g", "DN32G", "a-rc4g", "a-g023p",
                "ü-tda", "a b", "ab-c!", "ab-c١", "t9", "99999999999999999999",
                "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzz", "-a", "a-", "bcher-kva", "BCHER-KVA",
-               "xn--bcher-kva", "a\x00-tda", "\x7f-tda", "a-\x00"]
+               "xn--bcher-kva", "a\x00-tda", "\x7f-tda", "a-\x00",
+               # surrogates that pair up in UTF-16 (U+D83D U+DE00, U+DBFF U+DFFF)
+               "8c9bk9h", "a-7z5g82h",
+               # _ where a digit belongs
+               "_", "td_", "a_b-a", "a_b-_"]
 
 RANGES = [
     (0x20, 0x7E), (0x00, 0x1F), (0x80, 0xFF), (0x100, 0x24F), (0x370, 0x3FF), (0x400, 0x4FF),

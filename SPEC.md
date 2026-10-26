@@ -77,7 +77,8 @@ The differential tests compare the tool with Python transcriptions of the pseudo
 
 The tool must agree with the transcriptions on every input. With each implementation, a difference is allowed only for a known reason, confirmed by the transcription:
 
-- a value that is not a scalar value;
+- a value that is not a scalar value, including Node's surrogates that pair up in its UTF-16 string;
 - an integer overflow in the implementation;
 - Python's reading of a leading delimiter;
-- libidn2's IDNA-specific refusals.
+- libidn2's IDNA-specific refusals;
+- libidn2's reading of `_` after the delimiter as the digit `a`.

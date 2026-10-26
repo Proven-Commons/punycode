@@ -50,8 +50,10 @@ The tests count every disagreement with the four implementations, with its reaso
 
 - **Integer width.** RFC 3492, section 6.4, has an implementation fail when its integers overflow. The RFC's sample code and libidn2 overflow past 2^32 - 1, and Node's punycode.js past 2^31 - 1. This library uses unbounded integers, so it encodes and decodes long texts that they refuse.
 - **Values that are not scalar values.** The RFC's sample code returns surrogates and values past U+10FFFF. Python and Node return surrogates. libidn2 returns some values past U+10FFFF. This library fails on all of them.
+- **Node's surrogates pair up.** Node returns surrogates as part of a UTF-16 string, so a high surrogate followed by a low one reads back as a single code point. `8c9bk9h` stands for U+D83D U+DE00, which Node returns as U+1F600.
 - **Python's `punycode` codec** reads a delimiter with nothing before it, so it decodes `-tda` as `ü`.
 - **libidn2** refuses two kinds of string RFC 3492 allows. It refuses a string with no deltas, such as `abc-` or the empty string. It also refuses a basic code point before the delimiter that is not a letter, digit, `-` or `_`. These are IDNA rules, not Punycode ones.
+- **libidn2 reads `_` as a digit.** After the delimiter, libidn2 2.3.7 reads `_` as `a`, the digit 0, so `td_` decodes to `ü` as `tda` does. `_` is not a Punycode digit, so this library rejects `td_`.
 
 ## What you must trust
 
