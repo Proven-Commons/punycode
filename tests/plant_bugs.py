@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check that the differential tests catch planted bugs.
 
-Each bug is a one-line change to Hostname/Basic.lean. The script
+Each bug is a one-line change to Punycode/Basic.lean. The script
 copies the project to a temporary folder, plants one bug at a time,
 runs tests/run_tests.py there with a small count, and records how many
 failures the tests report. Every planted bug must give at least one.
