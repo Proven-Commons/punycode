@@ -63,13 +63,24 @@ BUGS = [
 
 
 def failures(copy, count):
+    """The failures a run of the tests reports, or None, with the run's
+    output, when it reports none: the code did not build, or the run did
+    not finish. A run that dies writes no record, so the old one is
+    removed first rather than read again."""
+    record = copy / "tests" / "TEST-RESULTS.md"
+    record.unlink(missing_ok=True)
     run = subprocess.run([sys.executable, "tests/run_tests.py", "--count", str(count)],
                          cwd=copy, capture_output=True, text=True)
-    text = (copy / "tests" / "TEST-RESULTS.md").read_text(encoding="utf-8")
-    m = re.search(r"^- Failures: (\d+)(.*)$", text, re.M)
+    out = run.stdout + run.stderr
+    if not record.exists():
+        return None, f"no record written, exit status {run.returncode}\n{out}"
+    m = re.search(r"^- Failures: (\d+)(.*)$", record.read_text(encoding="utf-8"), re.M)
     if m is None or "build" in m.group(2):
-        return None, run.stdout + run.stderr  # the bug did not build: not a catch
-    return int(m.group(1)), None
+        return None, out  # the bug did not build: not a catch
+    n = int(m.group(1))
+    if run.returncode != (1 if n else 0):
+        return None, f"{n} failures but exit status {run.returncode}\n{out}"
+    return n, None
 
 
 def main():
@@ -96,13 +107,13 @@ def main():
             rows.append((what, n))
             if not n:
                 missed += 1
-            print(f"{what}: {n} failures" + (" (did not build)" if err else ""))
+            print(f"{what}: {n} failures" + (" (did not build or did not finish)" if err else ""))
     lines = ["# Planted bugs", "",
              "Written by `tests/plant_bugs.py`. Each bug is a one-line change to "
              f"`{CODE}`, tested with `tests/run_tests.py --count {args.count}`. "
              "Every bug must give failures, and the unchanged code none.", "",
              "| Planted bug | Failures |", "|---|---|"]
-    lines += [f"| {what} | {'did not build' if n is None else n} |" for what, n in rows]
+    lines += [f"| {what} | {'did not build or did not finish' if n is None else n} |" for what, n in rows]
     lines += ["", f"Bugs caught: {sum(1 for what, n in rows[1:] if n)} of {len(BUGS)}", ""]
     RECORD.write_text("\n".join(lines), encoding="utf-8")
     return 1 if missed else 0
