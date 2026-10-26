@@ -26,7 +26,7 @@ Section 3 of RFC 3492 describes the format, with the parameters of section 5.
 
 **A delimiter with nothing before it** is not a delimiter, because a delimiter follows the basic code points only when there are some. So `-tda` fails, where `tda` gives `ü`. Python's `punycode` codec reads `-tda` as `ü`. The RFC's own decoder in section 6.2, its sample code in appendix C, Node's punycode.js and libidn2 all reject it.
 
-**Overflow.** Section 6.4 has an implementation fail when a number outgrows its integer type, so where it fails depends on the type. This library computes with unbounded naturals, so it has no such limit. Instead it fails as soon as the code point being built would pass U+10FFFF. A decoded value can then never be out of range, and every number stays below 0x110000 times the length of the input, so no input can make the arithmetic run long.
+**Overflow.** Section 6.4 has an implementation fail when a number outgrows its integer type, so where it fails depends on the type. This library computes with unbounded naturals, so it has no such limit. Instead it fails as soon as the code point being built would pass U+10FFFF. A decoded value can then never be out of range. The code is also written so that every number stays below 0x110000 times the length of the input, so no input can make the arithmetic run long; that bound is a property of the code, not one of the theorems below.
 
 Digits may be upper case or lower case, as section 5 requires of a decoder. Letters before the delimiter are code points of the string and keep their case. Mixed-case annotation (appendix A) is not read.
 

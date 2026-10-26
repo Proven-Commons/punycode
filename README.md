@@ -5,7 +5,7 @@ Punycode writes Unicode text as ASCII letters, digits and hyphens, so that names
 - The decoder reads a string exactly as section 3 of RFC 3492 describes.
 - Decoding an encoding gives the text back, for every text.
 - Every text has one encoding, up to the case of its digits. The decoder accepts no other string, so two strings that differ in more than case never decode to the same text.
-- The decoder never returns a value that is not a Unicode scalar value, and it never needs a number past 0x110000 times the length of its input.
+- The decoder never returns a value that is not a Unicode scalar value.
 
 So `-tda` is rejected, while Python's codec reads it as `ü`. `ib9b` and `en32g`, which stand for U+D800 and for a value past U+10FFFF, are rejected too.
 
@@ -42,6 +42,7 @@ The command-line tool in `Main.lean` answers requests with these functions direc
 - **IDNA.** This library does not check that a decoded label is a valid IDNA U-label, map case or normalize (UTS 46, IDNA2008), or handle the `xn--` prefix. IDNA's checks belong to the caller, or to a later slice.
 - **Mixed-case annotation** (appendix A). The case of digits is ignored when decoding, and digits are written in lower case.
 - **Reading requests and printing answers in `Main.lean`.** The differential tests cover them, with malformed requests and CR LF line endings.
+- **The bound on the decoder's numbers.** The code stops reading an integer as soon as the code point it builds would pass U+10FFFF, so its numbers stay below 0x110000 times the length of the input. That is how the code is written, and the tests' largest numbers agree, but no theorem states it.
 - **Speed.** The code works on lists of characters. Encoding takes time that grows with the square of the text's length. Decoding takes time proportional to its length times the number of code points inserted. Both are quick for DNS labels, which hold at most 63 characters.
 
 ## Where other implementations differ
