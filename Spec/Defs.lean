@@ -20,8 +20,10 @@
   - 3.4: after each delta, the bias adapts.
 
   Every inserted code point must be a Unicode scalar value: at most
-  U+10FFFF, and not a surrogate. Section 6.4 lets an implementation
-  fail when its integers overflow. This specification has no integer
+  U+10FFFF, and not a surrogate. This is a departure from RFC 3492,
+  whose section 5 allows any nonnegative integer: Lean's `Char`, like
+  UTF-8, holds only scalar values. Section 6.4 lets an implementation
+  fail when its integers overflow; this specification has no integer
   bound, so it fails only on values that are not scalar values.
 -/
 

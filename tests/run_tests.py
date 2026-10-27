@@ -389,7 +389,8 @@ def decode_reason(oracle, s, lean, got, model_peak, model_why):
             if want == got:
                 return "libidn2 reads _ in the deltas as the digit a"
     if (lean is None and got is not None and oracle == "Python"
-            and s.rfind("-") == 0 and model_why is not None):
+            and s.rfind("-") == 0 and model_why is not None
+            and got == model_decode(s[1:], surrogates=True)[0]):
         return "Python reads a delimiter with nothing before it"
     if lean is not None and got is None and BOUND[oracle] and model_peak > BOUND[oracle]:
         return f"the oracle's integers overflow at {BOUND[oracle] + 1:,}"
@@ -553,6 +554,19 @@ def hexs(s):
 MALFORMED = ["encode", "decode", "encode 0g", "decode 616", "decode ff", "decode c0af",
              "decode eda080", "ENCODE 61", "encode 61 62", "", "decode  61", "decode 6A"]
 
+# The command-line modes: the arguments, the output (None: not checked),
+# and the exit status.
+ARGV_CASES = [
+    (["encode", "bücher"], "bcher-kva\n", 0),
+    (["decode", "bcher-kva"], "bücher\n", 0),
+    (["decode", "BCHER-KVA"], "BüCHER\n", 0),
+    (["decode", "-tda"], "", 1),
+    (["decode", "td_"], "", 1),
+    (["encode", ""], "\n", 0),
+    ([], None, 2),
+    (["frobnicate", "x"], None, 2),
+]
+
 AT_EOF = [(f"decode {hexs('tda')}", f"OK {hexs(chr(0xFC))}"),
           (f"encode {hexs(chr(0xFC))}\r\n", f"OK {hexs('tda')}"),
           (f"decode {hexs('-tda')}\r\n", "FAIL")]
@@ -684,11 +698,29 @@ def main():
             failures.append((f"{'encode' if kind == 'e' else 'decode'} {x!r}"[:160],
                              repr(want)[:120], repr(got)[:120]))
 
-    # The round trip, as a check of the tool on its own encodings.
+    # The round trip, as a check of the tool on its own encodings: each
+    # string the tool wrote is sent back to it to decode.
+    encoded = [(x, got) for (label, kind, x), got in zip(items, lean)
+               if kind == "e" and isinstance(got, str)]
+    back, problem = run_lines([str(EXE), "serve"], [f"decode {hexs(t)}\n" for _, t in encoded])
+    if problem or len(back) != len(encoded):
+        failures.append(("(round trip run)", f"{len(encoded)} answers", f"{len(back)} {problem or ''}"))
     round_trips = 0
-    for (label, kind, x), got in zip(items, lean):
-        if kind == "e" and isinstance(got, str):
+    for (x, t), a in zip(encoded, back):
+        if a.startswith("OK") and [ord(c) for c in bytes.fromhex(a[3:]).decode("utf-8")] == x:
             round_trips += 1
+        else:
+            failures.append((f"decode of the tool's own encoding {t!r}"[:160], repr(x)[:120], a[:120]))
+
+    # The command-line modes other than serve.
+    argv_right = 0
+    for argv, want_out, want_code in ARGV_CASES:
+        run = subprocess.run([str(EXE), *argv], capture_output=True, text=True, timeout=60)
+        if run.returncode == want_code and (want_out is None or run.stdout == want_out):
+            argv_right += 1
+        else:
+            failures.append((f"punycode {' '.join(argv)}", f"{want_out!r}, exit {want_code}",
+                             f"{run.stdout!r}, exit {run.returncode}"))
 
     # Against the oracles.
     enc_items = [(i, x) for i, (_, k, x) in enumerate(items) if k == "e"]
@@ -765,6 +797,8 @@ def main():
         "- Agreement with each oracle over all inputs: "
         + ", ".join(f"{o} {agree[o]} of {len(items)}" for o in oracles),
         f"- Malformed requests answered `error`: {malformed_right} of {len(MALFORMED)}",
+        f"- The tool's encodings decoded back by the tool: {round_trips} of {len(encoded)}",
+        f"- Command-line modes other than `serve` answered right: {argv_right} of {len(ARGV_CASES)}",
         f"- Requests ending in CR LF: every seventh, {len(requests) // 7}",
         f"- Last lines sent alone, with no LF or with CR LF, answered right: {eof_right} of "
         f"{len(AT_EOF)}",

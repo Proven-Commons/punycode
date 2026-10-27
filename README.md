@@ -2,10 +2,10 @@
 
 Punycode writes Unicode text as ASCII letters, digits and hyphens, so that names such as `bücher` can live in the DNS as `xn--bcher-kva`. This library encodes and decodes it in Lean. Machine-checked proofs show four things:
 
-- The decoder reads a string exactly as section 3 of RFC 3492 describes.
+- The decoder reads a string exactly as section 3 of RFC 3492 describes, except that it fails where a decoded value would not be a Unicode scalar value, which RFC 3492 itself allows.
 - Decoding an encoding gives the text back, for every text.
 - Every text has one encoding, up to the case of its digits. The decoder accepts no other string, so two strings that differ in more than case never decode to the same text.
-- The decoder never returns a value that is not a Unicode scalar value.
+- Where a decoded value would be a surrogate or pass U+10FFFF, the decoder fails rather than returning something else.
 
 So `-tda` is rejected, while Python's codec reads it as `ü`. `ib9b` and `en32g`, which stand for U+D800 and for a value past U+10FFFF, are rejected too.
 
@@ -42,7 +42,7 @@ The command-line tool in `Main.lean` answers requests with these functions direc
 - **IDNA.** This library does not check that a decoded label is a valid IDNA U-label, map case or normalize (UTS 46, IDNA2008), or handle the `xn--` prefix. IDNA's checks belong to the caller, or to a later slice.
 - **Mixed-case annotation** (appendix A). The case of digits is ignored when decoding, and digits are written in lower case.
 - **Reading requests and printing answers in `Main.lean`.** The differential tests cover them, with malformed requests and CR LF line endings.
-- **The bound on the decoder's numbers.** The code stops reading an integer as soon as the code point it builds would pass U+10FFFF, so its numbers stay below 0x110000 times the length of the input. That is how the code is written, and the tests' largest numbers agree, but no theorem states it.
+- **The bound on the decoder's numbers.** The code stops reading an integer as soon as the code point it builds would pass U+10FFFF, so its numbers stay below 1,226 times 0x110000 times the length of the input. The factor is not 1: the code adds a digit times its weight before it compares, and that product can reach 1,225 times the limit, so for `aaa-bb0009` it computes 46,410,386 where 0x110000 times the length is 11,141,120. No theorem states any bound.
 - **Speed.** The code works on lists of characters. Encoding takes time that grows with the square of the text's length. Decoding takes time proportional to its length times the number of code points inserted. Both are quick for DNS labels, which hold at most 63 characters.
 
 ## Where other implementations differ
@@ -50,11 +50,11 @@ The command-line tool in `Main.lean` answers requests with these functions direc
 The tests count every disagreement with the four implementations, with its reason, confirmed against the model.
 
 - **Integer width.** RFC 3492, section 6.4, has an implementation fail when its integers overflow. The RFC's sample code and libidn2 overflow past 2^32 - 1, and Node's punycode.js past 2^31 - 1. This library uses unbounded integers, so it encodes and decodes long texts that they refuse.
-- **Values that are not scalar values.** The RFC's sample code returns surrogates and values past U+10FFFF. Python and Node return surrogates. libidn2 returns some values past U+10FFFF. This library fails on all of them.
+- **Values that are not scalar values.** RFC 3492, section 5, allows any nonnegative integer as a code point. This library accepts only Unicode scalar values, since Lean's characters and UTF-8 hold no others. The RFC's sample code returns surrogates and values past U+10FFFF. Python and Node return surrogates. libidn2 2.3.7 rejects values past U+10FFFF and high surrogates, but returns low surrogates (U+DC00 to U+DFFF). This library fails on all of them.
 - **Node's surrogates pair up.** Node returns surrogates as part of a UTF-16 string, so a high surrogate followed by a low one reads back as a single code point. `8c9bk9h` stands for U+D83D U+DE00, which Node returns as U+1F600.
 - **Python's `punycode` codec** reads a delimiter with nothing before it, so it decodes `-tda` as `ü`.
 - **libidn2** refuses two kinds of string RFC 3492 allows. It refuses a string with no deltas, such as `abc-` or the empty string. It also refuses a basic code point before the delimiter that is not a letter, digit, `-` or `_`. These are IDNA rules, not Punycode ones.
-- **libidn2 reads `_` as a digit.** After the delimiter, libidn2 2.3.7 reads `_` as `a`, the digit 0, so `td_` decodes to `ü` as `tda` does. `_` is not a Punycode digit, so this library rejects `td_`.
+- **libidn2 reads `_` as a digit.** In the deltas, libidn2 2.3.7 reads `_` as `a`, the digit 0, so `td_` decodes to `ü` as `tda` does, and `_` alone to U+0080. `_` is not a Punycode digit, so this library rejects both.
 
 ## What you must trust
 

@@ -17,6 +17,8 @@ Written by `tests/run_tests.py`. Rerun it to check these numbers.
 - Inputs whose processing needs a number past 2**31 - 1: 107
 - Agreement with each oracle over all inputs: RFC 3492 310259 of 319757, Python 308157 of 319757, Node 316950 of 319757, libidn2 244820 of 319757
 - Malformed requests answered `error`: 12 of 12
+- The tool's encodings decoded back by the tool: 100050 of 100050
+- Command-line modes other than `serve` answered right: 8 of 8
 - Requests ending in CR LF: every seventh, 45679
 - Last lines sent alone, with no LF or with CR LF, answered right: 3 of 3
 - Failures: 0

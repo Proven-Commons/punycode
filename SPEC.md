@@ -21,12 +21,13 @@ Section 3 of RFC 3492 describes the format, with the parameters of section 5.
 `decode s` gives the code points `s` stands for, or nothing when `s` stands for none. That covers:
 
 - a code point that is not a digit after the delimiter, or one outside ASCII before it;
-- digits that end inside an integer;
-- a value that is not a Unicode scalar value: a surrogate (U+D800 to U+DFFF), or anything past U+10FFFF.
+- digits that end inside an integer.
+
+It also gives nothing where a decoded value is not a Unicode scalar value: a surrogate (U+D800 to U+DFFF), or anything past U+10FFFF. This is a departure from RFC 3492, whose section 5 allows any nonnegative integer as a code point: Lean's characters, like UTF-8, hold only scalar values, so such a string has no text to decode to. The RFC's own decoder in section 6.2 returns these values.
 
 **A delimiter with nothing before it** is not a delimiter, because a delimiter follows the basic code points only when there are some. So `-tda` fails, where `tda` gives `ü`. Python's `punycode` codec reads `-tda` as `ü`. The RFC's own decoder in section 6.2, its sample code in appendix C, Node's punycode.js and libidn2 all reject it.
 
-**Overflow.** Section 6.4 has an implementation fail when a number outgrows its integer type, so where it fails depends on the type. This library computes with unbounded naturals, so it has no such limit. Instead it fails as soon as the code point being built would pass U+10FFFF. A decoded value can then never be out of range. The code is also written so that every number stays below 0x110000 times the length of the input, so no input can make the arithmetic run long; that bound is a property of the code, not one of the theorems below.
+**Overflow.** Section 6.4 has an implementation fail when a number outgrows its integer type, so where it fails depends on the type. This library computes with unbounded naturals, so it has no such limit. Instead it fails as soon as the code point being built would pass U+10FFFF. A decoded value can then never be out of range. The code is also written so that every number stays below 1,226 times 0x110000 times the length of the input, so no input can make the arithmetic run long. The factor is not 1, since a digit times its weight, which can reach 1,225 times the limit, is added before the comparison. That bound is a property of the code, not one of the theorems below.
 
 Digits may be upper case or lower case, as section 5 requires of a decoder. Letters before the delimiter are code points of the string and keep their case. Mixed-case annotation (appendix A) is not read.
 

@@ -9,8 +9,8 @@
   has an implementation fail when a number outgrows its integer type,
   this one computes with unbounded naturals and fails as soon as the
   code point being built would pass U+10FFFF, which keeps every
-  number below 0x110000 times the length of the input. It also fails
-  on a surrogate, which is not a Unicode scalar value.
+  number below 1,226 times 0x110000 times the length of the input. It also fails on a surrogate, which is not a
+  Unicode scalar value.
 
   The encoder finds the insertions the decoder will make, then writes
   the deltas between them as section 3 describes, with the integer

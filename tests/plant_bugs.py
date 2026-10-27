@@ -5,9 +5,12 @@ Each bug is a one-line change to Punycode/Basic.lean. The script
 copies the project to a temporary folder, plants one bug at a time,
 runs tests/run_tests.py there with a small count, and records how many
 failures the tests report. Every planted bug must give at least one.
-The unchanged copy must give none. Each bug also breaks a proof, so
-`lake build` of the whole project fails with it in place; the tests
-build only the executable, so they run.
+The unchanged copy must give none. A run that gives up, because the
+executable did not build or an oracle could not be run, counts as
+missed, not caught: run_tests.py then writes `- Failures: 1 (why)`,
+and anything after the count marks the run as given up. Each bug also
+breaks a proof, so `lake build` of the whole project fails with it in
+place; the tests build only the executable, so they run.
 
     python3 tests/plant_bugs.py [--count N]
 
@@ -75,8 +78,8 @@ def failures(copy, count):
     if not record.exists():
         return None, f"no record written, exit status {run.returncode}\n{out}"
     m = re.search(r"^- Failures: (\d+)(.*)$", record.read_text(encoding="utf-8"), re.M)
-    if m is None or "build" in m.group(2):
-        return None, out  # the bug did not build: not a catch
+    if m is None or m.group(2).strip():
+        return None, out  # the run gave up, for example the bug did not build: not a catch
     n = int(m.group(1))
     if run.returncode != (1 if n else 0):
         return None, f"{n} failures but exit status {run.returncode}\n{out}"
@@ -111,7 +114,8 @@ def main():
     lines = ["# Planted bugs", "",
              "Written by `tests/plant_bugs.py`. Each bug is a one-line change to "
              f"`{CODE}`, tested with `tests/run_tests.py --count {args.count}`. "
-             "Every bug must give failures, and the unchanged code none.", "",
+             "Every bug must give failures, and the unchanged code none. A run that gives up, "
+             "because the code did not build or an oracle could not be run, counts as missed.", "",
              "| Planted bug | Failures |", "|---|---|"]
     lines += [f"| {what} | {'did not build or did not finish' if n is None else n} |" for what, n in rows]
     lines += ["", f"Bugs caught: {sum(1 for what, n in rows[1:] if n)} of {len(BUGS)}", ""]
