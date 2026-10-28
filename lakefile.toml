@@ -1,0 +1,16 @@
+name = "punycode"
+version = "0.1.0"
+defaultTargets = ["Punycode", "Spec", "Proofs", "punycode"]
+
+[[lean_lib]]
+name = "Punycode"
+
+[[lean_lib]]
+name = "Spec"
+
+[[lean_lib]]
+name = "Proofs"
+
+[[lean_exe]]
+name = "punycode"
+root = "Main"
