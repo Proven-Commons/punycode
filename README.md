@@ -24,16 +24,16 @@ Neither adds or removes the `xn--` prefix of IDNA. `SPEC.md` says what each one 
 
 ## What is proved
 
-The statements are in `Spec.lean`, the definitions they use in `Spec/Defs.lean`, and the proofs in `Proofs/`.
+The statements are in `Punycode/Spec.lean`, the definitions they use in `Punycode/Spec/Defs.lean`, and the proofs in `Punycode/Proofs/`.
 
 | Claim | Theorem |
 |-------|---------|
-| `decode` gives what section 3 of RFC 3492 describes: the basic code points, then one insertion per delta, with the state machine of section 3.2, the variable-length integers of section 3.3 and the bias adaptation of section 3.4. It fails when a value is not a Unicode scalar value. `Spec.decode` sets the rules out one state change at a time, apart from the code. | `Spec.decode_eq` |
-| A decoded text is never longer than the string it came from. | `Spec.decode_length` |
-| Decoding an encoding gives the text back. | `Spec.decode_encode` |
-| `decode s` gives `cs` exactly when `encode cs` is `s` with its digits in lower case. So the encoding is unique up to case, and `decode` accepts nothing else. | `Spec.decode_iff` |
-| An encoding is the basic code points, in order, then a delimiter if there are any, then lower case letters and digits. | `Spec.encode_form` |
-| The 19 samples of section 7.1, both ways. Strings that stand for nothing, and strings at the edges that do. | `Spec.rfc3492_decode`, `Spec.rfc3492_encode`, `Spec.reject_vectors`, `Spec.accept_vectors` |
+| `decode` gives what section 3 of RFC 3492 describes: the basic code points, then one insertion per delta, with the state machine of section 3.2, the variable-length integers of section 3.3 and the bias adaptation of section 3.4. It fails when a value is not a Unicode scalar value. `Punycode.Spec.decode` sets the rules out one state change at a time, apart from the code. | `Punycode.Spec.decode_eq` |
+| A decoded text is never longer than the string it came from. | `Punycode.Spec.decode_length` |
+| Decoding an encoding gives the text back. | `Punycode.Spec.decode_encode` |
+| `decode s` gives `cs` exactly when `encode cs` is `s` with its digits in lower case. So the encoding is unique up to case, and `decode` accepts nothing else. | `Punycode.Spec.decode_iff` |
+| An encoding is the basic code points, in order, then a delimiter if there are any, then lower case letters and digits. | `Punycode.Spec.encode_form` |
+| The 19 samples of section 7.1, both ways. Strings that stand for nothing, and strings at the edges that do. | `Punycode.Spec.rfc3492_decode`, `Punycode.Spec.rfc3492_encode`, `Punycode.Spec.reject_vectors`, `Punycode.Spec.accept_vectors` |
 
 The command-line tool in `Main.lean` answers requests with these functions directly.
 
@@ -79,7 +79,7 @@ python3 tests/run_tests.py
 python3 tests/plant_bugs.py
 ```
 
-`lake comparator --paranoid` builds the statements and the proofs in a sandbox. It checks that each theorem in `Proofs/` proves exactly the statement in `Spec.lean`, using only the axioms `propext`, `Classical.choice`, and `Quot.sound`, and replays it through every kernel shipped with Lean.
+`lake comparator --paranoid` builds the statements and the proofs in a sandbox. It checks that each theorem in `Punycode/Proofs/` proves exactly the statement in `Punycode/Spec.lean`, using only the axioms `propext`, `Classical.choice`, and `Quot.sound`, and replays it through every kernel shipped with Lean.
 
 The test script builds the tool and the RFC's sample code, and runs these inputs:
 
@@ -94,9 +94,9 @@ It then rewrites `tests/TEST-RESULTS.md`. `tests/plant_bugs.py` plants ten bugs 
 ## Layout
 
 - `Punycode/Basic.lean`: the code under proof.
-- `Spec.lean`: the statements, with `sorry` for proofs. A reviewer approves this file.
-- `Spec/Defs.lean`: the definitions the statements use, written from section 3 of RFC 3492.
-- `Proofs.lean` and `Proofs/`: the proofs, under the same names.
+- `Punycode/Spec.lean`: the statements, with `sorry` for proofs. A reviewer approves this file.
+- `Punycode/Spec/Defs.lean`: the definitions the statements use, written from section 3 of RFC 3492.
+- `Punycode/Proofs.lean` and `Punycode/Proofs/`: the proofs, under the same names.
 - `Main.lean`: the command-line tool the tests drive.
 - `lakefile.toml`: the build. It names the package and its version, its libraries and executable, and the default targets, and sets nothing else.
 - `comparator.json`: which theorems `lake comparator` checks, and which axioms it allows.

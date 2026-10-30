@@ -1,8 +1,8 @@
 /-
-  The definitions the statements in `Spec.lean` use, written from
+  The definitions the statements in `Punycode/Spec.lean` use, written from
   RFC 3492, separately from the code in `Punycode/`.
 
-  `Spec.decode` follows the description of Bootstring in section 3,
+  `Punycode.Spec.decode` follows the description of Bootstring in section 3,
   with the parameters of section 5, rather than the pseudocode of
   section 6 that the code follows:
 
@@ -27,7 +27,7 @@
   bound, so it fails only on values that are not scalar values.
 -/
 
-namespace Spec
+namespace Punycode.Spec
 
 /-! ## Parameters (section 5) -/
 
@@ -190,4 +190,4 @@ def lowerDigits (s : List Char) : List Char :=
   | some (c :: lit, rest) => (c :: lit) ++ '-' :: rest.map lower
   | _ => s.map lower
 
-end Spec
+end Punycode.Spec

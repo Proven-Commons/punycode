@@ -1,12 +1,12 @@
-import Proofs.DecodeLoop
+import Punycode.Proofs.DecodeLoop
 
 /-!
-  The decoder: `Punycode.decode` computes `Spec.decode`, and never gives
+  The decoder: `Punycode.decode` computes `Punycode.Spec.decode`, and never gives
   more code points than its input has.
 
-  - `Proofs/DecodeBasic.lean`: digits, thresholds and bias adaptation.
-  - `Proofs/DecodeInt.lean`: variable-length integers.
-  - `Proofs/DecodeLoop.lean`: the main loop against `readDeltas` and
+  - `Punycode/Proofs/DecodeBasic.lean`: digits, thresholds and bias adaptation.
+  - `Punycode/Proofs/DecodeInt.lean`: variable-length integers.
+  - `Punycode/Proofs/DecodeLoop.lean`: the main loop against `readDeltas` and
     `insertAll`.
   - This file: the split at the last delimiter, and the two theorems.
 -/
@@ -79,7 +79,7 @@ theorem splitLast_some : ∀ (l b a : List Char), Punycode.splitLast l = some (b
         rfl
       · cases h
 
-/-- The last delimiter, as `Spec.split` finds it. -/
+/-- The last delimiter, as `Punycode.Spec.split` finds it. -/
 theorem last_decomp (l : List Char) (h : '-' ∈ l) :
     ∃ b a, l = b ++ '-' :: a ∧ '-' ∉ a ∧ l.length - 1 - l.reverse.idxOf '-' = b.length := by
   obtain ⟨pre, post, h1, h2, h3⟩ := idxOf_decomp '-' l.reverse (List.mem_reverse.mpr h)
@@ -95,12 +95,12 @@ theorem last_decomp (l : List Char) (h : '-' ∈ l) :
     last delimiter comes first: then the specification fails, and the
     code reads the delimiter as a digit. -/
 theorem split_cases (l : List Char) :
-    (∃ lit rest, Punycode.splitLiteral l = (lit, rest) ∧ Spec.split l = some (lit, rest)) ∨
-    (∃ a, l = '-' :: a ∧ Punycode.splitLiteral l = ([], l) ∧ Spec.split l = none) := by
+    (∃ lit rest, Punycode.splitLiteral l = (lit, rest) ∧ Punycode.Spec.split l = some (lit, rest)) ∨
+    (∃ a, l = '-' :: a ∧ Punycode.splitLiteral l = ([], l) ∧ Punycode.Spec.split l = none) := by
   by_cases h : '-' ∈ l
   · obtain ⟨b, a, hl, ha, hp⟩ := last_decomp l h
     have hs : Punycode.splitLast l = some (b, a) := by rw [hl]; exact splitLast_append a ha b
-    unfold Punycode.splitLiteral Spec.split
+    unfold Punycode.splitLiteral Punycode.Spec.split
     rw [hs, ite_eq_left h]
     dsimp only
     rw [hp]
@@ -118,7 +118,7 @@ theorem split_cases (l : List Char) :
     refine ⟨[], l, ?_, ?_⟩
     · unfold Punycode.splitLiteral
       rw [splitLast_of_not_mem l h]
-    · unfold Spec.split
+    · unfold Punycode.Spec.split
       rw [ite_eq_right h]
 
 theorem splitLiteral_length (l : List Char) :
@@ -133,20 +133,20 @@ theorem splitLiteral_length (l : List Char) :
 
 /-! ## The theorems -/
 
-theorem decode_eq' (s : String) : Punycode.decode s = Spec.decode s.toList := by
-  unfold Punycode.decode Spec.decode
+theorem decode_eq' (s : String) : Punycode.decode s = Punycode.Spec.decode s.toList := by
+  unfold Punycode.decode Punycode.Spec.decode
   rcases split_cases s.toList with ⟨lit, rest, h1, h2⟩ | ⟨a, ha, h1, h2⟩
   · rw [h1, h2]
     dsimp only
-    by_cases hb : ∀ c ∈ lit, Spec.Basic c
+    by_cases hb : ∀ c ∈ lit, Punycode.Spec.Basic c
     · rw [ite_eq_left ((all_isBasic_iff lit).mpr hb), ite_eq_left hb,
         decodeLoop_eq rest.length _ _ _ _ _ _ (Nat.le_refl _) (Nat.zero_le _) (by decide),
         initialBias_eq, initialN_eq]
-      cases rest.mapM Spec.digitValue with
+      cases rest.mapM Punycode.Spec.digitValue with
       | none => rfl
       | some ds =>
         simp only [Option.bind]
-        cases Spec.readDeltas Spec.initialBias true lit.length ds <;> rfl
+        cases Punycode.Spec.readDeltas Punycode.Spec.initialBias true lit.length ds <;> rfl
     · rw [ite_eq_right (fun h => hb ((all_isBasic_iff lit).mp h)), ite_eq_right hb]
   · rw [h1, h2]
     dsimp only

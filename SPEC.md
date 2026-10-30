@@ -1,6 +1,6 @@
 # Specification: punycode
 
-Punycode (RFC 3492, https://www.rfc-editor.org/rfc/rfc3492) writes a string of Unicode code points as a string of ASCII letters, digits and hyphens, and reads it back. IDNA uses it to put names such as `bücher` into the DNS as `xn--bcher-kva`. This library encodes and decodes one string. It does not add or remove the `xn--` prefix. A reviewer who did not write this specification approves it. The approval also covers `Spec.lean`, `Spec/Defs.lean`, and the other files `bar.toml` lists.
+Punycode (RFC 3492, https://www.rfc-editor.org/rfc/rfc3492) writes a string of Unicode code points as a string of ASCII letters, digits and hyphens, and reads it back. IDNA uses it to put names such as `bücher` into the DNS as `xn--bcher-kva`. This library encodes and decodes one string. It does not add or remove the `xn--` prefix. A reviewer who did not write this specification approves it. The approval also covers `Punycode/Spec.lean`, `Punycode/Spec/Defs.lean`, and the other files `bar.toml` lists.
 
 ## The format
 
@@ -14,7 +14,7 @@ Section 3 of RFC 3492 describes the format, with the parameters of section 5.
 - **Each delta** is a generalized variable-length integer (section 3.3): base 36 digits, least significant first. `A` to `Z` and `a` to `z` are 0 to 25, and `0` to `9` are 26 to 35. Digit `j` has threshold `t(j)` and weight `w(j)`, and the first digit below its threshold is the last.
 - **After each delta**, the bias that sets the thresholds adapts (section 3.4).
 
-`Spec.decode` in `Spec/Defs.lean` sets these rules out as written, one state change at a time. The code follows the pseudocode of section 6 instead, and the proofs show the two agree.
+`Punycode.Spec.decode` in `Punycode/Spec/Defs.lean` sets these rules out as written, one state change at a time. The code follows the pseudocode of section 6 instead, and the proofs show the two agree.
 
 ## Decoding
 
@@ -37,25 +37,25 @@ Digits may be upper case or lower case, as section 5 requires of a decoder. Lett
 
 ## What must always hold
 
-Each property is a theorem in `Spec.lean`, under the name given.
+Each property is a theorem in `Punycode/Spec.lean`, under the name given.
 
 | Property | Theorem |
 |----------|---------|
-| `decode` reads a string as section 3 describes, as `Spec.decode` states it. | `Spec.decode_eq` |
-| A decoded string is never longer than the string it came from. | `Spec.decode_length` |
-| Decoding an encoding gives the code points back. | `Spec.decode_encode` |
-| `decode s` gives `cs` exactly when `encode cs` is `s` with its digits in lower case. | `Spec.decode_iff` |
-| An encoding starts with the basic code points, in order, then a delimiter if there are any. The rest are lower case letters and digits. | `Spec.encode_form` |
-| The 19 samples of section 7.1, decoded and encoded. | `Spec.rfc3492_decode`, `Spec.rfc3492_encode` |
-| Strings that stand for nothing, and strings at the edges that do. | `Spec.reject_vectors`, `Spec.accept_vectors` |
+| `decode` reads a string as section 3 describes, as `Punycode.Spec.decode` states it. | `Punycode.Spec.decode_eq` |
+| A decoded string is never longer than the string it came from. | `Punycode.Spec.decode_length` |
+| Decoding an encoding gives the code points back. | `Punycode.Spec.decode_encode` |
+| `decode s` gives `cs` exactly when `encode cs` is `s` with its digits in lower case. | `Punycode.Spec.decode_iff` |
+| An encoding starts with the basic code points, in order, then a delimiter if there are any. The rest are lower case letters and digits. | `Punycode.Spec.encode_form` |
+| The 19 samples of section 7.1, decoded and encoded. | `Punycode.Spec.rfc3492_decode`, `Punycode.Spec.rfc3492_encode` |
+| Strings that stand for nothing, and strings at the edges that do. | `Punycode.Spec.reject_vectors`, `Punycode.Spec.accept_vectors` |
 
 Together, these fix every output.
 
-- `decode` is fixed for every string by `Spec.decode_eq`.
-- `Spec.decode_iff` then says `encode cs` is the one string with lower case digits that decodes to `cs`.
-- `Spec.decode_encode` says there is such a string for every `cs`.
+- `decode` is fixed for every string by `Punycode.Spec.decode_eq`.
+- `Punycode.Spec.decode_iff` then says `encode cs` is the one string with lower case digits that decodes to `cs`.
+- `Punycode.Spec.decode_encode` says there is such a string for every `cs`.
 
-So two strings decode to the same code points only when they differ in the case of their digits. Section 6.2 of the RFC states this uniqueness in prose. `Spec.decode_iff` proves it.
+So two strings decode to the same code points only when they differ in the case of their digits. Section 6.2 of the RFC states this uniqueness in prose. `Punycode.Spec.decode_iff` proves it.
 
 ## The command-line tool
 

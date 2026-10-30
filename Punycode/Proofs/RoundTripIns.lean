@@ -4,7 +4,7 @@
   same code points.
 -/
 
-import Proofs.RoundTripLoop
+import Punycode.Proofs.RoundTripLoop
 
 namespace Punycode.Proofs.Enc
 

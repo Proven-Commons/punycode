@@ -5,7 +5,7 @@
   basic code points, a delimiter if there are any, then digits.
 -/
 
-import Proofs.RoundTripIns
+import Punycode.Proofs.RoundTripIns
 
 namespace Punycode.Proofs.Enc
 
@@ -72,19 +72,19 @@ theorem splitLast_append {a b : List Char} (hb : '-' ∉ b) :
   | cons c a ih =>
     rw [List.cons_append, splitLast, ih]
 
-theorem dash_not_mem_map_lower {l : List Char} (h : '-' ∉ l) : '-' ∉ l.map Spec.lower := by
+theorem dash_not_mem_map_lower {l : List Char} (h : '-' ∉ l) : '-' ∉ l.map Punycode.Spec.lower := by
   intro hm
   obtain ⟨x, hx, hxe⟩ := List.mem_map.mp hm
   rw [(lower_eq_dash_iff x).mp hxe] at hx
   exact h hx
 
-theorem split_of_not_mem {l : List Char} (h : '-' ∉ l) : Spec.split l = some ([], l) := by
-  unfold Spec.split
+theorem split_of_not_mem {l : List Char} (h : '-' ∉ l) : Punycode.Spec.split l = some ([], l) := by
+  unfold Punycode.Spec.split
   rw [ite_eq_right h]
 
 theorem split_append {a b : List Char} (hb : '-' ∉ b) :
-    Spec.split (a ++ '-' :: b) = if a = [] then none else some (a, b) := by
-  unfold Spec.split
+    Punycode.Spec.split (a ++ '-' :: b) = if a = [] then none else some (a, b) := by
+  unfold Punycode.Spec.split
   have hmem : '-' ∈ a ++ '-' :: b := by simp
   rw [ite_eq_left hmem]
   have hidx : (a ++ '-' :: b).reverse.idxOf '-' = b.length := by
@@ -105,15 +105,15 @@ theorem split_append {a b : List Char} (hb : '-' ∉ b) :
 
 /-- `lowerDigits` in terms of `splitLiteral`, and `splitLiteral` of it. -/
 theorem lowerDigits_split (l : List Char) :
-    Spec.lowerDigits l = (splitLiteral l).1 ++ (if (splitLiteral l).1 = [] then [] else ['-']) ++
-        (splitLiteral l).2.map Spec.lower ∧
-      splitLiteral (Spec.lowerDigits l) = ((splitLiteral l).1, (splitLiteral l).2.map Spec.lower) := by
+    Punycode.Spec.lowerDigits l = (splitLiteral l).1 ++ (if (splitLiteral l).1 = [] then [] else ['-']) ++
+        (splitLiteral l).2.map Punycode.Spec.lower ∧
+      splitLiteral (Punycode.Spec.lowerDigits l) = ((splitLiteral l).1, (splitLiteral l).2.map Punycode.Spec.lower) := by
   cases hs : splitLast l with
   | none =>
     have hl := splitLast_none hs
     have hsl : splitLiteral l = ([], l) := by unfold splitLiteral; rw [hs]
-    have hld : Spec.lowerDigits l = l.map Spec.lower := by
-      unfold Spec.lowerDigits; rw [split_of_not_mem hl]
+    have hld : Punycode.Spec.lowerDigits l = l.map Punycode.Spec.lower := by
+      unfold Punycode.Spec.lowerDigits; rw [split_of_not_mem hl]
     rw [hsl, hld]
     refine ⟨rfl, ?_⟩
     unfold splitLiteral
@@ -124,19 +124,19 @@ theorem lowerDigits_split (l : List Char) :
     cases a with
     | nil =>
       have hsl : splitLiteral l = ([], l) := by unfold splitLiteral; rw [hs]
-      have hld : Spec.lowerDigits l = l.map Spec.lower := by
-        unfold Spec.lowerDigits
+      have hld : Punycode.Spec.lowerDigits l = l.map Punycode.Spec.lower := by
+        unfold Punycode.Spec.lowerDigits
         rw [hl, split_append hb, ite_eq_left rfl]
       rw [hsl, hld]
       refine ⟨rfl, ?_⟩
       unfold splitLiteral
       rw [hl, List.nil_append, List.map_cons, lower_dash,
-        show '-' :: b.map Spec.lower = [] ++ '-' :: b.map Spec.lower from rfl,
+        show '-' :: b.map Punycode.Spec.lower = [] ++ '-' :: b.map Punycode.Spec.lower from rfl,
         splitLast_append (dash_not_mem_map_lower hb)]
     | cons c a =>
       have hsl : splitLiteral l = (c :: a, b) := by unfold splitLiteral; rw [hs]
-      have hld : Spec.lowerDigits l = (c :: a) ++ '-' :: b.map Spec.lower := by
-        unfold Spec.lowerDigits
+      have hld : Punycode.Spec.lowerDigits l = (c :: a) ++ '-' :: b.map Punycode.Spec.lower := by
+        unfold Punycode.Spec.lowerDigits
         rw [hl, split_append hb, ite_eq_right (List.cons_ne_nil c a)]
       rw [hsl, hld]
       refine ⟨by simp, ?_⟩
@@ -191,7 +191,7 @@ theorem decode_eq (s : String) : decode s =
 
 /-- Lower-casing the digits of a string does not change what it decodes to. -/
 theorem decode_lowerDigits (s : String) :
-    decode (String.ofList (Spec.lowerDigits s.toList)) = decode s := by
+    decode (String.ofList (Punycode.Spec.lowerDigits s.toList)) = decode s := by
   rw [decode_eq, decode_eq, String.toList_ofList, (lowerDigits_split s.toList).2]
   by_cases hc : (splitLiteral s.toList).1.all isBasic = true
   · rw [ite_eq_left hc, ite_eq_left hc, decodeLoop_map_lower]
@@ -220,7 +220,7 @@ theorem decode_encode' (cs : List Char) : Punycode.decode (Punycode.encode cs) =
   exact this
 
 theorem decode_iff' (s : String) (cs : List Char) :
-    Punycode.decode s = some cs ↔ (Punycode.encode cs).toList = Spec.lowerDigits s.toList := by
+    Punycode.decode s = some cs ↔ (Punycode.encode cs).toList = Punycode.Spec.lowerDigits s.toList := by
   constructor
   · intro h
     rw [decode_eq] at h
@@ -243,12 +243,12 @@ theorem decode_iff' (s : String) (cs : List Char) :
     exact decode_encode' cs
 
 theorem encode_form' (cs : List Char) :
-    ∃ digits, (Punycode.encode cs).toList = cs.filter (fun c => decide (Spec.Basic c)) ++
-        (if cs.any (fun c => decide (Spec.Basic c)) then ['-'] else []) ++ digits ∧
+    ∃ digits, (Punycode.encode cs).toList = cs.filter (fun c => decide (Punycode.Spec.Basic c)) ++
+        (if cs.any (fun c => decide (Punycode.Spec.Basic c)) then ['-'] else []) ++ digits ∧
       ∀ c ∈ digits, ('a' ≤ c ∧ c ≤ 'z') ∨ ('0' ≤ c ∧ c ≤ '9') := by
   refine ⟨(encodeDeltas (cs.filter isBasic).length 72 true 0
     (deltas (cs.filter isBasic).length 128 0 0 (insertions cs))).map digitChar, ?_, ?_⟩
-  · have hb : (fun c => decide (Spec.Basic c)) = isBasic := rfl
+  · have hb : (fun c => decide (Punycode.Spec.Basic c)) = isBasic := rfl
     rw [encode_toList, hb]
     congr 2
     by_cases hany : cs.any isBasic = true

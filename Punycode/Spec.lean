@@ -1,59 +1,58 @@
 /-
-  The proofs of the statements in `Spec.lean`, under the same names.
-  Each statement is copied from `Spec.lean` word for word; `lake
-  comparator` checks that they match. The work is in `Proofs/`; the
-  test vectors are checked by the kernel with `decide`.
+  The specification as Lean statements: the challenge file.
+
+  A reviewer who did not write this file approves it, and `bar.toml`
+  records the hash it had then. The proofs live in `Punycode/Proofs.lean`, under
+  the same names; `lake comparator` checks that each one proves exactly
+  the statement written here. The `sorry`s below are expected in this
+  file only.
+
+  The definitions the statements use, written from RFC 3492, are in
+  `Punycode/Spec/Defs.lean`. That file is part of the specification too.
 -/
 
 import Punycode
-import Spec.Defs
-import Proofs.Decode
-import Proofs.RoundTrip
+import Punycode.Spec.Defs
 
 open Punycode
 
 /-! ## Decoding -/
 
 /-- `decode` reads a Punycode string as section 3 of RFC 3492
-    describes, as `Spec.decode` sets it out. -/
-theorem Spec.decode_eq (s : String) : Punycode.decode s = Spec.decode s.toList := 
-  Punycode.Proofs.decode_eq' s
+    describes, as `Punycode.Spec.decode` sets it out. -/
+theorem Punycode.Spec.decode_eq (s : String) : Punycode.decode s = Punycode.Spec.decode s.toList := sorry
 
 /-- A decoded string is never longer than the Punycode string it came
     from. -/
-theorem Spec.decode_length (s : String) (cs : List Char) (h : Punycode.decode s = some cs) :
-    cs.length ≤ s.length := 
-  Punycode.Proofs.decode_length' s cs h
+theorem Punycode.Spec.decode_length (s : String) (cs : List Char) (h : Punycode.decode s = some cs) :
+    cs.length ≤ s.length := sorry
 
 /-! ## Encoding -/
 
 /-- Decoding an encoding gives the code points back, for every list of
     code points. -/
-theorem Spec.decode_encode (cs : List Char) : Punycode.decode (Punycode.encode cs) = some cs := 
-  Punycode.Proofs.decode_encode' cs
+theorem Punycode.Spec.decode_encode (cs : List Char) : Punycode.decode (Punycode.encode cs) = some cs := sorry
 
 /-- `decode s` gives `cs` exactly when the encoding of `cs` is `s`
     with its digits in lower case. So every list of code points has one
     encoding, up to the case of its digits, and the decoder accepts no
     other string: two strings that differ other than in the case of
     their digits never decode to the same code points (section 6.2). -/
-theorem Spec.decode_iff (s : String) (cs : List Char) :
-    Punycode.decode s = some cs ↔ (Punycode.encode cs).toList = Spec.lowerDigits s.toList := 
-  Punycode.Proofs.decode_iff' s cs
+theorem Punycode.Spec.decode_iff (s : String) (cs : List Char) :
+    Punycode.decode s = some cs ↔ (Punycode.encode cs).toList = Punycode.Spec.lowerDigits s.toList := sorry
 
 /-- An encoding starts with the basic code points, in order, then a
     delimiter if there are any (section 3.1). The rest are lower case
     letters and digits. -/
-theorem Spec.encode_form (cs : List Char) :
-    ∃ digits, (Punycode.encode cs).toList = cs.filter (fun c => decide (Spec.Basic c)) ++
-        (if cs.any (fun c => decide (Spec.Basic c)) then ['-'] else []) ++ digits ∧
-      ∀ c ∈ digits, ('a' ≤ c ∧ c ≤ 'z') ∨ ('0' ≤ c ∧ c ≤ '9') := 
-  Punycode.Proofs.encode_form' cs
+theorem Punycode.Spec.encode_form (cs : List Char) :
+    ∃ digits, (Punycode.encode cs).toList = cs.filter (fun c => decide (Punycode.Spec.Basic c)) ++
+        (if cs.any (fun c => decide (Punycode.Spec.Basic c)) then ['-'] else []) ++ digits ∧
+      ∀ c ∈ digits, ('a' ≤ c ∧ c ≤ 'z') ∨ ('0' ≤ c ∧ c ≤ '9') := sorry
 
 /-! ## Test vectors -/
 
 /-- The samples of section 7.1, decoded. -/
-theorem Spec.rfc3492_decode :
+theorem Punycode.Spec.rfc3492_decode :
     Punycode.decode "egbpdaj6bu4bxfgehfvwxn" =
       some ([0x0644, 0x064A, 0x0647, 0x0645, 0x0627, 0x0628, 0x062A, 0x0643, 0x0644, 0x0645, 0x0648, 0x0634, 0x0639, 0x0631, 0x0628, 0x064A, 0x061F].map Char.ofNat) ∧
     Punycode.decode "ihqwcrb4cv8a8dqg056pqjye" =
@@ -91,13 +90,13 @@ theorem Spec.rfc3492_decode :
     Punycode.decode "d9juau41awczczp" =
       some ([0x305D, 0x306E, 0x30B9, 0x30D4, 0x30FC, 0x30C9, 0x3067].map Char.ofNat) ∧
     Punycode.decode "-> $1.00 <--" =
-      some ([0x002D, 0x003E, 0x0020, 0x0024, 0x0031, 0x002E, 0x0030, 0x0030, 0x0020, 0x003C, 0x002D].map Char.ofNat) := by
-  decide +kernel
+      some ([0x002D, 0x003E, 0x0020, 0x0024, 0x0031, 0x002E, 0x0030, 0x0030, 0x0020, 0x003C, 0x002D].map Char.ofNat) :=
+  sorry
 
 /-- The samples of section 7.1, encoded. The encoder writes digits in
     lower case, so sample (I), which the RFC shows with an upper case
     `D`, comes out with `d`. -/
-theorem Spec.rfc3492_encode :
+theorem Punycode.Spec.rfc3492_encode :
     Punycode.encode ([0x0644, 0x064A, 0x0647, 0x0645, 0x0627, 0x0628, 0x062A, 0x0643, 0x0644, 0x0645, 0x0648, 0x0634, 0x0639, 0x0631, 0x0628, 0x064A, 0x061F].map Char.ofNat) =
       "egbpdaj6bu4bxfgehfvwxn" ∧
     Punycode.encode ([0x4ED6, 0x4EEC, 0x4E3A, 0x4EC0, 0x4E48, 0x4E0D, 0x8BF4, 0x4E2D, 0x6587].map Char.ofNat) =
@@ -135,8 +134,8 @@ theorem Spec.rfc3492_encode :
     Punycode.encode ([0x305D, 0x306E, 0x30B9, 0x30D4, 0x30FC, 0x30C9, 0x3067].map Char.ofNat) =
       "d9juau41awczczp" ∧
     Punycode.encode ([0x002D, 0x003E, 0x0020, 0x0024, 0x0031, 0x002E, 0x0030, 0x0030, 0x0020, 0x003C, 0x002D].map Char.ofNat) =
-      "-> $1.00 <--" := by
-  decide +kernel
+      "-> $1.00 <--" :=
+  sorry
 
 /-- Strings that are not the encoding of any code points. A delimiter
     with nothing before it is not a delimiter, so `-tda` fails where
@@ -145,7 +144,7 @@ theorem Spec.rfc3492_encode :
     code point outside ASCII before the delimiter, a code point that is
     not a digit after it, and a digit string that ends before its
     integer does. -/
-theorem Spec.reject_vectors :
+theorem Punycode.Spec.reject_vectors :
     Punycode.decode "-tda" = none ∧
     Punycode.decode "-" = none ∧
     Punycode.decode "ib9b" = none ∧
@@ -157,14 +156,14 @@ theorem Spec.reject_vectors :
     Punycode.decode "ab-c!" = none ∧
     Punycode.decode "ab-c\u0661" = none ∧
     Punycode.decode "t9" = none ∧
-    Punycode.decode "99999999999999999999" = none := by
-  decide +kernel
+    Punycode.decode "99999999999999999999" = none :=
+  sorry
 
 /-- Strings that decode, at the edges. The empty string is the empty
     list. A string of basic code points ends with a delimiter, so `--`
     is a hyphen. Digits may be upper case. `dn32g` is U+10FFFF and `0y0c` is U+E000, the
     first after the surrogates. -/
-theorem Spec.accept_vectors :
+theorem Punycode.Spec.accept_vectors :
     Punycode.decode "" = some [] ∧
     Punycode.decode "abc-" = some ['a', 'b', 'c'] ∧
     Punycode.decode "tda" = some ['\u00FC'] ∧
@@ -176,5 +175,5 @@ theorem Spec.accept_vectors :
     Punycode.encode ['\u00FC'] = "tda" ∧
     Punycode.encode [] = "" ∧
     Punycode.encode ['-'] = "--" ∧
-    Punycode.encode [Char.ofNat 0x10FFFF] = "dn32g" := by
-  decide +kernel
+    Punycode.encode [Char.ofNat 0x10FFFF] = "dn32g" :=
+  sorry

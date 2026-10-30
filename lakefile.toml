@@ -1,16 +1,18 @@
 name = "punycode"
 license = "Apache-2.0"
 version = "0.1.0"
-defaultTargets = ["Punycode", "Spec", "Proofs", "punycode"]
+defaultTargets = ["Punycode", "PunycodeSpec", "PunycodeProofs", "punycode"]
 
 [[lean_lib]]
 name = "Punycode"
 
 [[lean_lib]]
-name = "Spec"
+name = "PunycodeSpec"
+roots = ["Punycode.Spec"]
 
 [[lean_lib]]
-name = "Proofs"
+name = "PunycodeProofs"
+roots = ["Punycode.Proofs"]
 
 [[lean_exe]]
 name = "punycode"

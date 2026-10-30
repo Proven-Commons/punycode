@@ -1,10 +1,20 @@
 {
-  "challenge_module": "Spec",
-  "solution_module": "Proofs",
+  "challenge_module": "Punycode.Spec",
+  "solution_module": "Punycode.Proofs",
   "theorem_names": [
-    "Spec.decode_eq", "Spec.decode_length", "Spec.decode_encode", "Spec.decode_iff",
-    "Spec.encode_form", "Spec.rfc3492_decode", "Spec.rfc3492_encode", "Spec.reject_vectors",
-    "Spec.accept_vectors"
+    "Punycode.Spec.decode_eq",
+    "Punycode.Spec.decode_length",
+    "Punycode.Spec.decode_encode",
+    "Punycode.Spec.decode_iff",
+    "Punycode.Spec.encode_form",
+    "Punycode.Spec.rfc3492_decode",
+    "Punycode.Spec.rfc3492_encode",
+    "Punycode.Spec.reject_vectors",
+    "Punycode.Spec.accept_vectors"
   ],
-  "permitted_axioms": ["propext", "Quot.sound", "Classical.choice"]
+  "permitted_axioms": [
+    "propext",
+    "Quot.sound",
+    "Classical.choice"
+  ]
 }

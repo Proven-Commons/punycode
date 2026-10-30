@@ -1,4 +1,4 @@
-import Proofs.DecodeInt
+import Punycode.Proofs.DecodeInt
 
 /-!
   The main loop: the code's `decodeLoop`, which reads one delta and
@@ -13,23 +13,23 @@ namespace Punycode.Proofs
 
 /-! ## The state machine -/
 
-theorem next_lt {L n i : Nat} (h : i < L) : Spec.next L (n, i) = (n, i + 1) := by
-  unfold Spec.next
+theorem next_lt {L n i : Nat} (h : i < L) : Punycode.Spec.next L (n, i) = (n, i + 1) := by
+  unfold Punycode.Spec.next
   rw [ite_eq_left h]
 
-theorem next_self {L n : Nat} : Spec.next L (n, L) = (n + 1, 0) := by
-  unfold Spec.next
+theorem next_self {L n : Nat} : Punycode.Spec.next L (n, L) = (n + 1, 0) := by
+  unfold Punycode.Spec.next
   rw [ite_eq_right (Nat.lt_irrefl L)]
 
 /-- `d` state changes from `⟨n, i⟩`, on a string of length `L`, by
     division. -/
 theorem advance_eq (L : Nat) : ∀ (d n i : Nat), i ≤ L →
-    Spec.advance L d (n, i) = (n + (i + d) / (L + 1), (i + d) % (L + 1))
+    Punycode.Spec.advance L d (n, i) = (n + (i + d) / (L + 1), (i + d) % (L + 1))
   | 0, n, i, h => by
-    rw [Spec.advance, Nat.add_zero, Nat.div_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega),
+    rw [Punycode.Spec.advance, Nat.add_zero, Nat.div_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega),
       Nat.add_zero]
   | d + 1, n, i, h => by
-    rw [Spec.advance]
+    rw [Punycode.Spec.advance]
     by_cases hi : i < L
     · rw [next_lt hi, advance_eq L d n (i + 1) (by omega), show i + 1 + d = i + (d + 1) by omega]
     · have hL : i = L := by omega
@@ -45,13 +45,13 @@ theorem advance_eq (L : Nat) : ∀ (d n i : Nat), i ≤ L →
     at most the length of the string. -/
 theorem insertAll_step (out : List Char) (n i v : Nat) (deltas : List Nat)
     (hi : i ≤ out.length) :
-    Spec.insertAll out (n, i) (v :: deltas) =
-      if Spec.Scalar (n + (i + v) / (out.length + 1)) then
-        Spec.insertAll
+    Punycode.Spec.insertAll out (n, i) (v :: deltas) =
+      if Punycode.Spec.Scalar (n + (i + v) / (out.length + 1)) then
+        Punycode.Spec.insertAll
           (out.insertIdx ((i + v) % (out.length + 1)) (Char.ofNat (n + (i + v) / (out.length + 1))))
           (n + (i + v) / (out.length + 1), (i + v) % (out.length + 1) + 1) deltas
       else none := by
-  rw [Spec.insertAll, advance_eq _ v n i hi]
+  rw [Punycode.Spec.insertAll, advance_eq _ v n i hi]
   simp only []
   rw [next_lt (Nat.mod_lt _ (Nat.succ_pos _))]
 
@@ -67,9 +67,9 @@ theorem limit_lt_iff (n L x : Nat) (hn : n ≤ 0x10FFFF) :
 /-! ## Reading deltas -/
 
 theorem readDeltas_of_none {bias count d : Nat} {first : Bool} {ds : List Nat}
-    (h : Spec.readInt bias 0 (d :: ds) = none) :
-    Spec.readDeltas bias first count (d :: ds) = none := by
-  rw [Spec.readDeltas.eq_def]
+    (h : Punycode.Spec.readInt bias 0 (d :: ds) = none) :
+    Punycode.Spec.readDeltas bias first count (d :: ds) = none := by
+  rw [Punycode.Spec.readDeltas.eq_def]
   simp only []
   split
   · rfl
@@ -78,10 +78,10 @@ theorem readDeltas_of_none {bias count d : Nat} {first : Bool} {ds : List Nat}
     cases heq
 
 theorem readDeltas_of_some {bias count d v : Nat} {first : Bool} {ds rds : List Nat}
-    (h : Spec.readInt bias 0 (d :: ds) = some (v, rds)) :
-    Spec.readDeltas bias first count (d :: ds) =
-      (Spec.readDeltas (Spec.adapt v (count + 1) first) false (count + 1) rds).map (v :: ·) := by
-  rw [Spec.readDeltas.eq_def]
+    (h : Punycode.Spec.readInt bias 0 (d :: ds) = some (v, rds)) :
+    Punycode.Spec.readDeltas bias first count (d :: ds) =
+      (Punycode.Spec.readDeltas (Punycode.Spec.adapt v (count + 1) first) false (count + 1) rds).map (v :: ·) := by
+  rw [Punycode.Spec.readDeltas.eq_def]
   simp only []
   split
   · rename_i heq
@@ -132,7 +132,7 @@ theorem decodeLoop_cons_some {bias n i i' : Nat} {first : Bool} {out cs rest : L
 /-- The code fails when a code point after the literal portion is not a
     digit: it reads them all, or fails before. -/
 theorem decodeLoop_of_mapM_none : ∀ (len bias : Nat) (first : Bool) (n i : Nat)
-    (out input : List Char), input.length ≤ len → input.mapM Spec.digitValue = none →
+    (out input : List Char), input.length ≤ len → input.mapM Punycode.Spec.digitValue = none →
     Punycode.decodeLoop bias first n i out input = none
   | _, _, _, _, _, _, [], _, hm => by cases hm
   | 0, _, _, _, _, _, _ :: _, hl, _ => by simp at hl
@@ -157,21 +157,21 @@ theorem decodeLoop_of_mapM_none : ∀ (len bias : Nat) (first : Bool) (n i : Nat
 theorem decodeLoop_eq : ∀ (len bias : Nat) (first : Bool) (n i : Nat) (out input : List Char),
     input.length ≤ len → i ≤ out.length → n ≤ 0x10FFFF →
     Punycode.decodeLoop bias first n i out input =
-      (input.mapM Spec.digitValue).bind fun ds =>
-        (Spec.readDeltas bias first out.length ds).bind (Spec.insertAll out (n, i))
+      (input.mapM Punycode.Spec.digitValue).bind fun ds =>
+        (Punycode.Spec.readDeltas bias first out.length ds).bind (Punycode.Spec.insertAll out (n, i))
   | _, _, _, _, _, out, [], _, _, _ => by
     rw [Punycode.decodeLoop.eq_1, List.mapM_nil]
-    show some out = (Spec.readDeltas _ _ out.length []).bind (Spec.insertAll out _)
-    rw [Spec.readDeltas.eq_1]
+    show some out = (Punycode.Spec.readDeltas _ _ out.length []).bind (Punycode.Spec.insertAll out _)
+    rw [Punycode.Spec.readDeltas.eq_1]
     rfl
   | 0, _, _, _, _, _, _ :: _, hl, _, _ => by simp at hl
   | len + 1, bias, first, n, i, out, c :: cs, hl, hi, hn => by
-    cases hm : (c :: cs).mapM Spec.digitValue with
+    cases hm : (c :: cs).mapM Punycode.Spec.digitValue with
     | none => exact decodeLoop_of_mapM_none (len + 1) bias first n i out (c :: cs) hl hm
     | some ds =>
       obtain ⟨d0, ds', hd0, hm', rfl⟩ := mapM_cons_some hm
       simp only [Option.bind]
-      cases hr : Spec.readInt bias 0 (d0 :: ds') with
+      cases hr : Punycode.Spec.readInt bias 0 (d0 :: ds') with
       | none =>
         rw [readDeltas_of_none hr]
         exact decodeLoop_cons_none
@@ -182,12 +182,12 @@ theorem decodeLoop_eq : ∀ (len bias : Nat) (first : Bool) (n i : Nat) (out inp
         by_cases hlim : (0x110000 - n) * (out.length + 1) - 1 < i + v
         · rw [decodeLoop_cons_none (decodeInt_of_gt bias _ (c :: cs) (d0 :: ds') i 0 v rds hm hr hlim)]
           have hbig := (limit_lt_iff n out.length (i + v) hn).mp hlim
-          cases Spec.readDeltas (Spec.adapt v (out.length + 1) first) false (out.length + 1) rds with
+          cases Punycode.Spec.readDeltas (Punycode.Spec.adapt v (out.length + 1) first) false (out.length + 1) rds with
           | none => rfl
           | some deltas =>
             simp only [Option.map, Option.bind]
             rw [insertAll_step out n i v deltas hi, ite_eq_right]
-            unfold Spec.Scalar
+            unfold Punycode.Spec.Scalar
             omega
         · obtain ⟨rest, hdi, hrm⟩ :=
             decodeInt_of_le bias ((0x110000 - n) * (out.length + 1) - 1) (c :: cs) (d0 :: ds') i 0
@@ -199,12 +199,12 @@ theorem decodeLoop_eq : ∀ (len bias : Nat) (first : Bool) (n i : Nat) (out inp
           rw [decodeLoop_cons_some hdi]
           split
           · rename_i hsur
-            cases Spec.readDeltas (Spec.adapt v (out.length + 1) first) false (out.length + 1) rds with
+            cases Punycode.Spec.readDeltas (Punycode.Spec.adapt v (out.length + 1) first) false (out.length + 1) rds with
             | none => rfl
             | some deltas =>
               simp only [Option.map, Option.bind]
               rw [insertAll_step out n i v deltas hi, ite_eq_right]
-              unfold Spec.Scalar
+              unfold Punycode.Spec.Scalar
               omega
           · rename_i hsur
             have hp : (i + v) % (out.length + 1) ≤ out.length :=
@@ -216,12 +216,12 @@ theorem decodeLoop_eq : ∀ (len bias : Nat) (first : Bool) (n i : Nat) (out inp
               (by omega)]
             rw [hrm, Nat.add_sub_cancel_left, adapt_eq, List.length_insertIdx_of_le_length hp]
             simp only [Option.bind]
-            cases Spec.readDeltas (Spec.adapt v (out.length + 1) first) false (out.length + 1) rds with
+            cases Punycode.Spec.readDeltas (Punycode.Spec.adapt v (out.length + 1) first) false (out.length + 1) rds with
             | none => rfl
             | some deltas =>
               simp only [Option.map, Option.bind]
               rw [insertAll_step out n i v deltas hi, ite_eq_left]
-              unfold Spec.Scalar
+              unfold Punycode.Spec.Scalar
               omega
 
 /-! ## Lengths -/

@@ -4,7 +4,7 @@
 -/
 
 import Punycode
-import Spec.Defs
+import Punycode.Spec.Defs
 
 namespace Punycode.Proofs.Enc
 
@@ -62,10 +62,10 @@ theorem digitValue_digitChar_all : ∀ d, d < 36 → digitValue (digitChar d) = 
 theorem digitValue_digitChar {d : Nat} (h : d < 36) : digitValue (digitChar d) = some d :=
   digitValue_digitChar_all d h
 
-theorem lower_digitChar_all : ∀ d, d < 36 → Spec.lower (digitChar d) = digitChar d := by
+theorem lower_digitChar_all : ∀ d, d < 36 → Punycode.Spec.lower (digitChar d) = digitChar d := by
   decide
 
-theorem lower_digitChar {d : Nat} (h : d < 36) : Spec.lower (digitChar d) = digitChar d :=
+theorem lower_digitChar {d : Nat} (h : d < 36) : Punycode.Spec.lower (digitChar d) = digitChar d :=
   lower_digitChar_all d h
 
 theorem digitChar_ne_dash_all : ∀ d, d < 36 → digitChar d ≠ '-' := by
@@ -83,8 +83,8 @@ theorem digitChar_form {d : Nat} (h : d < 36) :
   digitChar_form_all d h
 
 theorem toNat_lower (c : Char) :
-    (Spec.lower c).toNat = if 65 ≤ c.toNat ∧ c.toNat ≤ 90 then c.toNat + 32 else c.toNat := by
-  unfold Spec.lower
+    (Punycode.Spec.lower c).toNat = if 65 ≤ c.toNat ∧ c.toNat ≤ 90 then c.toNat + 32 else c.toNat := by
+  unfold Punycode.Spec.lower
   by_cases h : 65 ≤ c.toNat ∧ c.toNat ≤ 90
   · have h' : 0x41 ≤ c.toNat ∧ c.toNat ≤ 0x5A := h
     rw [ite_eq_left h', ite_eq_left h]
@@ -92,7 +92,7 @@ theorem toNat_lower (c : Char) :
   · have h' : ¬ (0x41 ≤ c.toNat ∧ c.toNat ≤ 0x5A) := h
     rw [ite_eq_right h', ite_eq_right h]
 
-theorem digitValue_lower (c : Char) : digitValue (Spec.lower c) = digitValue c := by
+theorem digitValue_lower (c : Char) : digitValue (Punycode.Spec.lower c) = digitValue c := by
   rw [digitValue_eq, digitValue_eq, toNat_lower]
   by_cases h : 65 ≤ c.toNat ∧ c.toNat ≤ 90
   · have e : c.toNat + 32 - 97 = c.toNat - 65 := by omega
@@ -100,7 +100,7 @@ theorem digitValue_lower (c : Char) : digitValue (Spec.lower c) = digitValue c :
   · rw [ite_eq_right h]
 
 theorem lower_of_digitValue {c : Char} {d : Nat} (h : digitValue c = some d) :
-    Spec.lower c = digitChar d ∧ d < 36 := by
+    Punycode.Spec.lower c = digitChar d ∧ d < 36 := by
   rw [digitValue_eq] at h
   have hd : d < 36 := by
     split at h
@@ -127,9 +127,9 @@ theorem lower_of_digitValue {c : Char} {d : Nat} (h : digitValue c = some d) :
         omega
       · cases h
 
-theorem lower_dash : Spec.lower '-' = '-' := by decide
+theorem lower_dash : Punycode.Spec.lower '-' = '-' := by decide
 
-theorem lower_eq_dash_iff (c : Char) : Spec.lower c = '-' ↔ c = '-' := by
+theorem lower_eq_dash_iff (c : Char) : Punycode.Spec.lower c = '-' ↔ c = '-' := by
   constructor
   · intro h
     have h1 := congrArg Char.toNat h
@@ -218,7 +218,7 @@ theorem decodeInt_inv (bias limit : Nat) :
     ∀ (cs : List Char) (i w k i' : Nat) (rest : List Char), 1 ≤ w →
       decodeInt bias limit cs i w k = some (i', rest) →
       ∃ pre q, cs = pre ++ rest ∧ i' = i + q * w ∧
-        pre.map Spec.lower = (encodeInt bias q k).map digitChar ∧ i' ≤ limit := by
+        pre.map Punycode.Spec.lower = (encodeInt bias q k).map digitChar ∧ i' ≤ limit := by
   intro cs
   induction cs with
   | nil =>
@@ -268,8 +268,8 @@ theorem decodeInt_inv (bias limit : Nat) :
 /-- `decodeInt` reads digits in either case. -/
 theorem decodeInt_map_lower (bias limit : Nat) :
     ∀ (cs : List Char) (i w k : Nat),
-      decodeInt bias limit (cs.map Spec.lower) i w k =
-        (decodeInt bias limit cs i w k).map (fun r => (r.1, r.2.map Spec.lower)) := by
+      decodeInt bias limit (cs.map Punycode.Spec.lower) i w k =
+        (decodeInt bias limit cs i w k).map (fun r => (r.1, r.2.map Punycode.Spec.lower)) := by
   intro cs
   induction cs with
   | nil => intro i w k; simp [decodeInt]

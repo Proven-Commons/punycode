@@ -2,7 +2,7 @@
   The decoder's main loop, run on deltas instead of digits.
 -/
 
-import Proofs.RoundTripNum
+import Punycode.Proofs.RoundTripNum
 
 namespace Punycode.Proofs.Enc
 
@@ -124,7 +124,7 @@ theorem decodeLoop_of_none {bias : Nat} {first : Bool} {n i : Nat} {out input : 
 
 theorem decodeLoop_map_lower :
     ∀ (bias : Nat) (first : Bool) (n i : Nat) (out input : List Char),
-      decodeLoop bias first n i out (input.map Spec.lower) = decodeLoop bias first n i out input := by
+      decodeLoop bias first n i out (input.map Punycode.Spec.lower) = decodeLoop bias first n i out input := by
   intro bias first n i out input
   induction bias, first, n, i, out, input using decodeLoop.induct with
   | case1 bias first n i out => rfl
@@ -195,7 +195,7 @@ theorem decodeLoop_encodeDeltas (b : Nat) :
 theorem decodeLoop_inv (b : Nat) :
     ∀ (bias : Nat) (first : Bool) (n i : Nat) (out input : List Char) (j : Nat) (cs : List Char),
       out.length = b + j → decodeLoop bias first n i out input = some cs →
-      ∃ ds s', input.map Spec.lower = (encodeDeltas b bias first j ds).map digitChar ∧
+      ∃ ds s', input.map Punycode.Spec.lower = (encodeDeltas b bias first j ds).map digitChar ∧
         run ⟨bias, first, n, i, out⟩ ds = some s' ∧ s'.out = cs := by
   intro bias first n i out input
   induction bias, first, n, i, out, input using decodeLoop.induct with

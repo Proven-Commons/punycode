@@ -1,4 +1,4 @@
-import Proofs.DecodeBasic
+import Punycode.Proofs.DecodeBasic
 
 /-!
   The code's `decodeInt` reads the same variable-length integers as the
@@ -53,7 +53,7 @@ theorem mapM_eq_none_of_none {α β : Type} {f : α → Option β} {a : α} (l :
 /-! ## One digit -/
 
 theorem w_succ (bias j : Nat) :
-    Spec.w bias j * (Punycode.base - Spec.t bias j) = Spec.w bias (j + 1) := rfl
+    Punycode.Spec.w bias j * (Punycode.base - Punycode.Spec.t bias j) = Punycode.Spec.w bias (j + 1) := rfl
 
 theorem k_succ (j : Nat) :
     Punycode.base * (j + 1) + Punycode.base = Punycode.base * (j + 1 + 1) := by
@@ -62,29 +62,29 @@ theorem k_succ (j : Nat) :
 /-- One step of `decodeInt`, at digit `j`, written with the
     specification's thresholds and weights. -/
 theorem decodeInt_cons_digit (bias limit : Nat) {c : Char} {d : Nat} (cs : List Char)
-    (i j : Nat) (h : Spec.digitValue c = some d) :
-    Punycode.decodeInt bias limit (c :: cs) i (Spec.w bias j) (Punycode.base * (j + 1)) =
-      if limit < i + d * Spec.w bias j then none
-      else if d < Spec.t bias j then some (i + d * Spec.w bias j, cs)
-      else Punycode.decodeInt bias limit cs (i + d * Spec.w bias j) (Spec.w bias (j + 1))
+    (i j : Nat) (h : Punycode.Spec.digitValue c = some d) :
+    Punycode.decodeInt bias limit (c :: cs) i (Punycode.Spec.w bias j) (Punycode.base * (j + 1)) =
+      if limit < i + d * Punycode.Spec.w bias j then none
+      else if d < Punycode.Spec.t bias j then some (i + d * Punycode.Spec.w bias j, cs)
+      else Punycode.decodeInt bias limit cs (i + d * Punycode.Spec.w bias j) (Punycode.Spec.w bias (j + 1))
         (Punycode.base * (j + 1 + 1)) := by
   rw [Punycode.decodeInt, digitValue_eq, h]
   simp only []
   rw [threshold_eq, w_succ, k_succ]
 
 theorem readInt_cons (bias j d : Nat) (ds : List Nat) :
-    Spec.readInt bias j (d :: ds) =
-      if d < Spec.t bias j then some (d * Spec.w bias j, ds)
-      else (Spec.readInt bias (j + 1) ds).map fun r => (d * Spec.w bias j + r.1, r.2) := by
-  rw [Spec.readInt]
+    Punycode.Spec.readInt bias j (d :: ds) =
+      if d < Punycode.Spec.t bias j then some (d * Punycode.Spec.w bias j, ds)
+      else (Punycode.Spec.readInt bias (j + 1) ds).map fun r => (d * Punycode.Spec.w bias j + r.1, r.2) := by
+  rw [Punycode.Spec.readInt]
 
 /-! ## The three outcomes -/
 
 /-- When the digits end before the integer does, so does `decodeInt`. -/
 theorem decodeInt_of_readInt_none (bias limit : Nat) :
     ∀ (cs : List Char) (ds : List Nat) (i j : Nat),
-      cs.mapM Spec.digitValue = some ds → Spec.readInt bias j ds = none →
-      Punycode.decodeInt bias limit cs i (Spec.w bias j) (Punycode.base * (j + 1)) = none
+      cs.mapM Punycode.Spec.digitValue = some ds → Punycode.Spec.readInt bias j ds = none →
+      Punycode.decodeInt bias limit cs i (Punycode.Spec.w bias j) (Punycode.base * (j + 1)) = none
   | [], _, _, _, _, _ => rfl
   | c :: cs, ds, i, j, hm, hr => by
     obtain ⟨d, ds', hd, hm', rfl⟩ := mapM_cons_some hm
@@ -94,9 +94,9 @@ theorem decodeInt_of_readInt_none (bias limit : Nat) :
     · rfl
     · split at hr
       · cases hr
-      · rw [ite_eq_right ‹¬d < Spec.t bias j›]
-        have hr' : Spec.readInt bias (j + 1) ds' = none := by
-          cases h : Spec.readInt bias (j + 1) ds' with
+      · rw [ite_eq_right ‹¬d < Punycode.Spec.t bias j›]
+        have hr' : Punycode.Spec.readInt bias (j + 1) ds' = none := by
+          cases h : Punycode.Spec.readInt bias (j + 1) ds' with
           | none => rfl
           | some r => rw [h] at hr; cases hr
         exact decodeInt_of_readInt_none bias limit cs ds' _ (j + 1) hm' hr'
@@ -104,11 +104,11 @@ theorem decodeInt_of_readInt_none (bias limit : Nat) :
 /-- When the sum passes the limit, `decodeInt` fails. -/
 theorem decodeInt_of_gt (bias limit : Nat) :
     ∀ (cs : List Char) (ds : List Nat) (i j v : Nat) (rds : List Nat),
-      cs.mapM Spec.digitValue = some ds → Spec.readInt bias j ds = some (v, rds) →
+      cs.mapM Punycode.Spec.digitValue = some ds → Punycode.Spec.readInt bias j ds = some (v, rds) →
       limit < i + v →
-      Punycode.decodeInt bias limit cs i (Spec.w bias j) (Punycode.base * (j + 1)) = none
+      Punycode.decodeInt bias limit cs i (Punycode.Spec.w bias j) (Punycode.base * (j + 1)) = none
   | [], _, _, _, _, _, hm, hr, _ => by
-    cases hm; simp [Spec.readInt] at hr
+    cases hm; simp [Punycode.Spec.readInt] at hr
   | c :: cs, ds, i, j, v, rds, hm, hr, hl => by
     obtain ⟨d, ds', hd, hm', rfl⟩ := mapM_cons_some hm
     rw [decodeInt_cons_digit bias limit cs i j hd]
@@ -118,8 +118,8 @@ theorem decodeInt_of_gt (bias limit : Nat) :
     · split at hr
       · cases hr
         omega
-      · rw [ite_eq_right ‹¬d < Spec.t bias j›]
-        cases h : Spec.readInt bias (j + 1) ds' with
+      · rw [ite_eq_right ‹¬d < Punycode.Spec.t bias j›]
+        cases h : Punycode.Spec.readInt bias (j + 1) ds' with
         | none => rw [h] at hr; cases hr
         | some r =>
           rw [h] at hr
@@ -130,28 +130,28 @@ theorem decodeInt_of_gt (bias limit : Nat) :
     and leaves the code points of the digits after it. -/
 theorem decodeInt_of_le (bias limit : Nat) :
     ∀ (cs : List Char) (ds : List Nat) (i j v : Nat) (rds : List Nat),
-      cs.mapM Spec.digitValue = some ds → Spec.readInt bias j ds = some (v, rds) →
+      cs.mapM Punycode.Spec.digitValue = some ds → Punycode.Spec.readInt bias j ds = some (v, rds) →
       i + v ≤ limit →
-      ∃ rest, Punycode.decodeInt bias limit cs i (Spec.w bias j) (Punycode.base * (j + 1)) =
-        some (i + v, rest) ∧ rest.mapM Spec.digitValue = some rds
+      ∃ rest, Punycode.decodeInt bias limit cs i (Punycode.Spec.w bias j) (Punycode.base * (j + 1)) =
+        some (i + v, rest) ∧ rest.mapM Punycode.Spec.digitValue = some rds
   | [], _, _, _, _, _, hm, hr, _ => by
-    cases hm; simp [Spec.readInt] at hr
+    cases hm; simp [Punycode.Spec.readInt] at hr
   | c :: cs, ds, i, j, v, rds, hm, hr, hl => by
     obtain ⟨d, ds', hd, hm', rfl⟩ := mapM_cons_some hm
     rw [decodeInt_cons_digit bias limit cs i j hd]
     rw [readInt_cons] at hr
     split at hr
     · cases hr
-      rw [ite_eq_right (by omega), ite_eq_left ‹d < Spec.t bias j›]
+      rw [ite_eq_right (by omega), ite_eq_left ‹d < Punycode.Spec.t bias j›]
       exact ⟨cs, rfl, hm'⟩
-    · cases h : Spec.readInt bias (j + 1) ds' with
+    · cases h : Punycode.Spec.readInt bias (j + 1) ds' with
       | none => rw [h] at hr; cases hr
       | some r =>
         rw [h] at hr
         cases hr
-        rw [ite_eq_right (by omega), ite_eq_right ‹¬d < Spec.t bias j›]
+        rw [ite_eq_right (by omega), ite_eq_right ‹¬d < Punycode.Spec.t bias j›]
         obtain ⟨rest, h1, h2⟩ :=
-          decodeInt_of_le bias limit cs ds' (i + d * Spec.w bias j) (j + 1) r.1 r.2 hm' h (by omega)
+          decodeInt_of_le bias limit cs ds' (i + d * Punycode.Spec.w bias j) (j + 1) r.1 r.2 hm' h (by omega)
         refine ⟨rest, ?_, h2⟩
         rw [h1, Nat.add_assoc]
 
@@ -160,11 +160,11 @@ theorem decodeInt_of_le (bias limit : Nat) :
 theorem decodeInt_mapM_none (bias limit : Nat) :
     ∀ (cs : List Char) (i w k v : Nat) (rest : List Char),
       Punycode.decodeInt bias limit cs i w k = some (v, rest) →
-      cs.mapM Spec.digitValue = none → rest.mapM Spec.digitValue = none
+      cs.mapM Punycode.Spec.digitValue = none → rest.mapM Punycode.Spec.digitValue = none
   | [], _, _, _, _, _, h, _ => by simp [Punycode.decodeInt] at h
   | c :: cs, i, w, k, v, rest, h, hm => by
     rw [Punycode.decodeInt, digitValue_eq] at h
-    cases hd : Spec.digitValue c with
+    cases hd : Punycode.Spec.digitValue c with
     | none => rw [hd] at h; cases h
     | some d =>
       rw [hd] at h

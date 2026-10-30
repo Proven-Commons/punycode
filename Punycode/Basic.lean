@@ -16,7 +16,7 @@
   the deltas between them as section 3 describes, with the integer
   encoding and bias adaptation of section 6.
 
-  `Spec.lean` states what the two compute.
+  `Punycode/Spec.lean` states what the two compute.
 -/
 
 namespace Punycode
